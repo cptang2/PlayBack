@@ -5,11 +5,7 @@ using System.Text;
 
 namespace PlayBack
 {
-    class Program
+    class Replay
     {
-        static void Main(string[] args)
-        {
-
-        }
     }
 }
