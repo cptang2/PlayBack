@@ -32,7 +32,8 @@ namespace PlayBack
                 for (int x = 0; x < bounds.Right - bounds.Left; x++)
                 {
                     temp = (uint)(image1.GetPixel(x, y).ToArgb() & ~image2.GetPixel(x, y).ToArgb());
-                    numODiffs += (uint)((temp / ((temp + 1) * 1.0)) + (1.0 / 3.0));
+                    //For any value of temp greater than 0, this will be 1:
+                    numODiffs += (uint)((temp / ((temp + 1) * 1.0)) + (1.0 / 2.0));
                 }
             }
         }
@@ -72,7 +73,8 @@ namespace PlayBack
 
             Console.WriteLine("Done with compare");
 
-            Console.ReadKey();
+            image1.Dispose();
+            image2.Dispose();
         }
 
 

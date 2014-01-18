@@ -13,6 +13,10 @@ namespace PlayBack
             Replay repObject = new Replay();
             repObject.readInstructs(Path.Combine(Environment.CurrentDirectory, "testcases\\replay.csv"));
 
+            repObject.printEvents();
+
+            repObject.playEvents();
+
             Console.ReadKey();
         }
     }
