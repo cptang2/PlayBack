@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace PlayBack
 {
@@ -9,7 +10,10 @@ namespace PlayBack
     {
         static void Main(string[] args)
         {
+            Replay repObject = new Replay();
+            repObject.readInstructs(Path.Combine(Environment.CurrentDirectory, "testcases\\replay.csv"));
 
+            Console.ReadKey();
         }
     }
 }
