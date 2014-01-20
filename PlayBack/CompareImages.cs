@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.IO;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace PlayBack
 {
@@ -24,6 +25,7 @@ namespace PlayBack
             bounds = tempBounds;
         }
 
+        //Bitwise compare:
         public void compare()
         {
             uint temp = 0;
@@ -31,7 +33,9 @@ namespace PlayBack
             {
                 for (int x = 0; x < bounds.Right - bounds.Left; x++)
                 {
+                    //Check whether the two values are different:
                     temp = (uint)(image1.GetPixel(x, y).ToArgb() & ~image2.GetPixel(x, y).ToArgb());
+
                     //For any value of temp greater than 0, this will be 1:
                     numODiffs += (uint)((temp / ((temp + 1) * 1.0)) + (1.0 / 2.0));
                 }
@@ -42,14 +46,9 @@ namespace PlayBack
 
     class CompareImages
     {
-        public static void driver(string tempImage1, string tempImage2, int numOfThreads)
+        //Compares the two images given. Splits the computation among the specified number of threads:
+        public static bool driver(Bitmap image1, Bitmap image2, int numOfThreads, int tolerance)
         {
-            int now = DateTime.Now.Millisecond;
-            Console.WriteLine("{0},{1}", DateTime.Now.Second, DateTime.Now.Millisecond);
-
-            Bitmap image1 = new Bitmap(tempImage1);
-            Bitmap image2 = new Bitmap(tempImage2);
-
             System.Drawing.Imaging.PixelFormat format = image1.PixelFormat;
 
             Thread[] compThreads = new Thread[numOfThreads];
@@ -69,15 +68,18 @@ namespace PlayBack
 
             Console.WriteLine("{0}% different", (total / (bounds.Height * bounds.Width * 1.0)) * 100);
 
-            Console.WriteLine("{0},{1}", DateTime.Now.Second, DateTime.Now.Millisecond);
-
             Console.WriteLine("Done with compare");
 
-            image1.Dispose();
-            image2.Dispose();
+            //image1.Dispose();
+            //image2.Dispose();
+
+            if (((total / (bounds.Height * bounds.Width * 1.0)) * 100) < tolerance)
+                return true;
+            else
+                return false;
         }
 
-
+        //Assign work to different threads:
         private static Rectangle allocThreads(int numOfThreads, Bitmap image1, Bitmap image2, Thread[] compThreads, Differ[] diff)
         {
             System.Drawing.Imaging.PixelFormat format = image1.PixelFormat;
@@ -99,7 +101,7 @@ namespace PlayBack
             return bounds;
         }
 
-
+        //Wait for the threads to finish:
         private static void waitForFinish(int numOfThreads, Thread[] compThreads)
         {
             bool someAlive = true;

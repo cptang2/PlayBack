@@ -10,14 +10,30 @@ namespace PlayBack
     {
         static void Main(string[] args)
         {
+            // % image difference tolerance
+            int tolerance = 5;
+
+            //Number of threads used in image compare:
+            int numOfThreads = 4;
+
+            Console.Write("File to replay: ");
+            string file = Console.ReadLine();
+            Console.WriteLine();
+            while (!File.Exists(file))
+            {
+                Console.Write("File to replay: ");
+                file = Console.ReadLine();
+            }
+
             Replay repObject = new Replay();
-            repObject.readInstructs(Path.Combine(Environment.CurrentDirectory, "testcases\\replay.csv"));
+            repObject.readInstructs(file);
 
             repObject.printEvents();
 
-            repObject.playEvents();
+            Console.WriteLine("Finished");
 
-            Console.ReadKey();
+            if (repObject.playEvents(numOfThreads, tolerance))
+                Console.ReadKey();
         }
     }
 }
