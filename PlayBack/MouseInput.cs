@@ -12,7 +12,7 @@ namespace PlayBack
     class MouseInput
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        private static extern void mouse_event(uint dwFlags, double dx, double dy, int dwData, uint dwExtraInfo);
+        private static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, uint dwExtraInfo);
 
         private static Rectangle bounds = Screen.GetBounds(Point.Empty);
 
@@ -35,15 +35,15 @@ namespace PlayBack
 
         MouseInput() { }
 
-        public static void mouse(string key, double x, double y)
+        public static void mouse(string key, int x, int y)
         {
-            mouse_event(inputMap[key], ((x / (double)bounds.Width) * 65535), ((y / (double)bounds.Height) * 65535), 0, 0);
+            mouse_event(inputMap[key], (int)((((x+1) * 65535) / (double)bounds.Width) + .5), (int)((((y+1) * 65535) / (double)bounds.Height) + .5), 0, 0);
 
             if (key == "upRight")
                 Thread.Sleep(1000);
         }
 
-        public static void move(double x, double y)
+        public static void move(int x, int y)
         {
             double dx = (x - Cursor.Position.X);
             double dy = (y - Cursor.Position.Y);
@@ -61,7 +61,7 @@ namespace PlayBack
                 dx = dx / (magnitude);
                 dy = dy / (magnitude);
 
-                mouse("move", (Cursor.Position.X + dx * 20), (Cursor.Position.Y + dy * 20));
+                mouse("move", (int)(Cursor.Position.X + dx * 20), (int)(Cursor.Position.Y + dy * 20));
 
                 Thread.Sleep(5);
             }
@@ -70,7 +70,7 @@ namespace PlayBack
         }
 
 
-        public static void mouseWheel(double x, double y, int detents)
+        public static void mouseWheel(int x, int y, int detents)
         {
             mouse("move", x, y);
             mouse_event(inputMap["detent"], x, y, detents, 0);
@@ -78,10 +78,10 @@ namespace PlayBack
         }
 
 
-        public static void doubleClick(string key, double x, double y)
+        public static void doubleClick(string key, int x, int y)
         {
-            mouse_event(inputMap[key], ((x / (double)bounds.Width) * 65535), ((y / (double)bounds.Height) * 65535), 0, 0);
-            mouse_event(inputMap[key], ((x / (double)bounds.Width) * 65535), ((y / (double)bounds.Height) * 65535), 0, 0);
+            mouse_event(inputMap[key], (int)((((x+1) * 65535) / (double)bounds.Width) + .5), (int)((((y+1) * 65535) / (double)bounds.Height) + .5), 0, 0);
+            mouse_event(inputMap[key], (int)((((x+1) * 65535) / (double)bounds.Width) + .5), (int)((((y+1) * 65535) / (double)bounds.Height) + .5), 0, 0);
         }
 
     }

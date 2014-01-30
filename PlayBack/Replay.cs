@@ -134,7 +134,7 @@ namespace PlayBack
             {
                 //Move mouse to location recorded:
                 //MouseInput.mouse("move", uint.Parse(coms[1]), uint.Parse(coms[2]));
-                MouseInput.move(double.Parse(coms[1]), double.Parse(coms[2]));
+                MouseInput.move(int.Parse(coms[1]), int.Parse(coms[2]));
 
                 //Check if the image matches the screen:
                 if (!compareToScreen(image, numOfThreads, tolerance, configList, imageName))
@@ -143,16 +143,16 @@ namespace PlayBack
 
             //If mouse up, move slowly to target area:
             if (coms[0].Contains("up") && !coms[0].Contains("key"))
-                MouseInput.move(double.Parse(coms[1]), double.Parse(coms[2]));
+                MouseInput.move(int.Parse(coms[1]), int.Parse(coms[2]));
 
             if ((coms[0].Contains("Left") || coms[0].Contains("Right") || coms[0].Contains("Middle")) && !coms[0].Contains("doubleclick"))
-                MouseInput.mouse(coms[0], double.Parse(coms[1]), double.Parse(coms[2]));
+                MouseInput.mouse(coms[0], int.Parse(coms[1]), int.Parse(coms[2]));
 
             else if (coms[0] == "detent")
-                MouseInput.mouseWheel(double.Parse(coms[1]), double.Parse(coms[2]), int.Parse(coms[3]));
+                MouseInput.mouseWheel(int.Parse(coms[1]), int.Parse(coms[2]), int.Parse(coms[3]));
 
             else if (coms[0].Contains("doubleclick"))
-                MouseInput.doubleClick(coms[0], double.Parse(coms[1]), double.Parse(coms[2]));
+                MouseInput.doubleClick(coms[0], int.Parse(coms[1]), int.Parse(coms[2]));
 
             else if (coms[0] == "keydown")
                 KeyboardInput.KeyDown(int.Parse(coms[1]));
