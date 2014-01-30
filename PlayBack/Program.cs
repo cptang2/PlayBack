@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Drawing;
 
 namespace PlayBack
 {
@@ -11,29 +12,55 @@ namespace PlayBack
         static void Main(string[] args)
         {
             // % image difference tolerance
-            int tolerance = 5;
-
+            //float tolerance = .5F;
             //Number of threads used in image compare:
             int numOfThreads = 4;
+            string result;
+            string file = null;
 
-            Console.Write("File to replay: ");
-            string file = Console.ReadLine();
-            Console.WriteLine();
+            //Get input:
             while (!File.Exists(file))
             {
                 Console.Write("File to replay: ");
                 file = Console.ReadLine();
             }
 
-            Replay repObject = new Replay();
-            repObject.readInstructs(file);
+            config configList = ReadConfig.read(Path.Combine(Path.GetDirectoryName(file), 
+                                                                    Path.GetFileNameWithoutExtension(file) + @"\config.xml"));
+            
+            //Wait for the time specified in the config file
+            System.Threading.Thread.Sleep(configList.startTime);
 
-            repObject.printEvents();
+            //Run playback and record the results:
+            result = createResultsFolder(file);
+            result = Path.Combine(result, "results.txt");
+            using (StreamWriter resultsFile = new StreamWriter(result))
+            {
+                Replay repObject = new Replay(file, resultsFile);
+                repObject.readInstructs();
+                repObject.printEvents();
 
+                if (repObject.playEvents(numOfThreads, configList.tolerance))
+                    resultsFile.WriteLine("Successful run");
+                else
+                    resultsFile.WriteLine("Failed run");
+
+            }
+            
             Console.WriteLine("Finished");
+          
+            Console.ReadKey();
+        }
 
-            if (repObject.playEvents(numOfThreads, tolerance))
-                Console.ReadKey();
+
+        static string createResultsFolder(string file)
+        {
+            string results = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + "_Results");
+            if (!Directory.Exists(results))
+            {
+                Directory.CreateDirectory(results);
+            }
+            return results;
         }
     }
 }

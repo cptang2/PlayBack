@@ -12,7 +12,7 @@ namespace PlayBack
     class MouseInput
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+        private static extern void mouse_event(uint dwFlags, double dx, double dy, int dwData, uint dwExtraInfo);
 
         private static Rectangle bounds = Screen.GetBounds(Point.Empty);
 
@@ -26,6 +26,7 @@ namespace PlayBack
             {"upRight", 0x0010},
             {"Middle", 0x0020},
             {"upMiddle", 0x0040},
+            {"detent", 0x0800},
             {"doubleclickLeft", 0x0002 | 0x0004},
             {"doubleclickRight", 0x0008 | 0x0010},
             {"doubleclickMiddle", 0x0020 | 0x0040}
@@ -34,31 +35,53 @@ namespace PlayBack
 
         MouseInput() { }
 
-        public static void mouse(string key, uint x, uint y)
+        public static void mouse(string key, double x, double y)
         {
-            mouse_event(inputMap[key], (uint)((x / (float)bounds.Width) * 65535), (uint)((y / (float)bounds.Height) * 65535), 0, 0);
+            mouse_event(inputMap[key], ((x / (double)bounds.Width) * 65535), ((y / (double)bounds.Height) * 65535), 0, 0);
+
+            if (key == "upRight")
+                Thread.Sleep(1000);
         }
 
-        public static void move(uint x, uint y)
+        public static void move(double x, double y)
         {
-            int curXPos = Cursor.Position.X;
-            int curYPos = Cursor.Position.Y;
-            float dx = (x - curXPos) / (float)300;
-            float dy = (y - curYPos) / (float)300;
+            double dx = (x - Cursor.Position.X);
+            double dy = (y - Cursor.Position.Y);
 
-            for (int i = 0; i < 300; i++)
+            //Scale to unit vector:
+            Double magnitude = Math.Sqrt(dx * dx + dy * dy);
+            dx = dx / (magnitude);
+            dy = dy / (magnitude);
+
+            while ((x - Cursor.Position.X) * (x - Cursor.Position.X) + (y - Cursor.Position.Y) * (y - Cursor.Position.Y) > 100)
             {
-                mouse("move", (uint)(curXPos + (dx * i)), (uint)(curYPos + (dy * i)));
+                dx = (x - Cursor.Position.X);
+                dy = (y - Cursor.Position.Y);
+                magnitude = Math.Sqrt(dx * dx + dy * dy);
+                dx = dx / (magnitude);
+                dy = dy / (magnitude);
+
+                mouse("move", (Cursor.Position.X + dx * 20), (Cursor.Position.Y + dy * 20));
+
                 Thread.Sleep(5);
             }
 
             mouse("move", x, y);
         }
 
-        public static void doubleClick(string key, uint x, uint y)
+
+        public static void mouseWheel(double x, double y, int detents)
         {
-            mouse_event(inputMap[key], (uint)((x / (float)bounds.Width) * 65535), (uint)((y / (float)bounds.Height) * 65535), 0, 0);
-            mouse_event(inputMap[key], (uint)((x / (float)bounds.Width) * 65535), (uint)((y / (float)bounds.Height) * 65535), 0, 0);
+            mouse("move", x, y);
+            mouse_event(inputMap["detent"], x, y, detents, 0);
+            System.Threading.Thread.Sleep(300);
+        }
+
+
+        public static void doubleClick(string key, double x, double y)
+        {
+            mouse_event(inputMap[key], ((x / (double)bounds.Width) * 65535), ((y / (double)bounds.Height) * 65535), 0, 0);
+            mouse_event(inputMap[key], ((x / (double)bounds.Width) * 65535), ((y / (double)bounds.Height) * 65535), 0, 0);
         }
 
     }
