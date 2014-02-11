@@ -11,8 +11,10 @@ namespace PlayBack
 {
     class MouseInput
     {
+        #region Unmanaged code import
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
         private static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, uint dwExtraInfo);
+        #endregion
 
         private static Rectangle bounds = Screen.GetBounds(Point.Empty);
 
@@ -43,23 +45,24 @@ namespace PlayBack
                 Thread.Sleep(1000);
         }
 
+        //Simulate mouse movement (Constant velocity of sqrt(800) pixels per 5 milliseconds):
         public static void move(int x, int y)
         {
             double dx = (x - Cursor.Position.X);
             double dy = (y - Cursor.Position.Y);
 
             //Scale to unit vector:
-            Double magnitude = Math.Sqrt(dx * dx + dy * dy);
-            dx = dx / (magnitude);
-            dy = dy / (magnitude);
+            Double mag = Math.Sqrt(dx * dx + dy * dy);
+            dx = dx / (mag);
+            dy = dy / (mag);
 
             while ((x - Cursor.Position.X) * (x - Cursor.Position.X) + (y - Cursor.Position.Y) * (y - Cursor.Position.Y) > 100)
             {
                 dx = (x - Cursor.Position.X);
                 dy = (y - Cursor.Position.Y);
-                magnitude = Math.Sqrt(dx * dx + dy * dy);
-                dx = dx / (magnitude);
-                dy = dy / (magnitude);
+                mag = Math.Sqrt(dx * dx + dy * dy);
+                dx = dx / (mag);
+                dy = dy / (mag);
 
                 mouse("move", (int)(Cursor.Position.X + dx * 20), (int)(Cursor.Position.Y + dy * 20));
 

@@ -4,63 +4,99 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Drawing;
+using System.Threading;
 
 namespace PlayBack
 {
     class Program
     {
+        // Used to store testcase and database pairs
+        class dbf
+        {
+            Dictionary<string, string> tRef = new Dictionary<string, string>();
+
+            public dbf() { }
+
+
+            public void add(string k, string s)
+            {
+                tRef.Add(k, s);
+            }
+
+
+            public bool contains(string k)
+            {
+                return tRef.ContainsKey(k);
+            }
+
+
+            public string this[string k]
+            {
+                get { return tRef[k]; }
+                set { tRef.Add(k, value); }
+            }
+        }
+
+
         static void Main(string[] args)
         {
-            // % image difference tolerance
-            //float tolerance = .5F;
-            //Number of threads used in image compare:
-            int numOfThreads = 4;
-            string result;
-            string file = null;
+            const int threads = 4;
+            const string fPath = @"C:\GDrop\Aut.txt";
+            List<string> files = new List<string>();
 
-            //Get input:
+            if (!File.Exists(fPath))
+                files = getInput();
+
+            foreach (string f in files)
+                Startup.run(threads, f);
+
+            Console.ReadKey();
+        }
+
+
+        //Get user input for file to replay
+        public static List<string> getInput()
+        {
+            string file = null;
+            List<string> files = new List<string>();
+
             while (!File.Exists(file))
             {
                 Console.Write("File to replay: ");
                 file = Console.ReadLine();
             }
 
-            config configList = ReadConfig.read(Path.Combine(Path.GetDirectoryName(file), 
-                                                                    Path.GetFileNameWithoutExtension(file) + @"\config.xml"));
-            
-            //Wait for the time specified in the config file
-            System.Threading.Thread.Sleep(configList.startTime);
+            files.Add(file);
 
-            //Run playback and record the results:
-            result = createResultsFolder(file);
-            result = Path.Combine(result, "results.txt");
-            using (StreamWriter resultsFile = new StreamWriter(result))
-            {
-                Replay repObject = new Replay(file, resultsFile);
-                repObject.readInstructs();
-                repObject.printEvents();
-
-                if (repObject.playEvents(numOfThreads, configList.tolerance))
-                    resultsFile.WriteLine("Successful run");
-                else
-                    resultsFile.WriteLine("Failed run");
-
-            }
-            
-            Console.WriteLine("Finished");
-          
-            Console.ReadKey();
+            return files;
         }
 
 
-        static string createResultsFolder(string file)
+        //Parse input file for test cases
+        private static dbf inParse(string file)
         {
-            string results = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + "_Results");
-            if (!Directory.Exists(results))
+            string ln;
+            dbf tcs = new dbf();
+
+            Func<string, bool> isInt = (k) =>
             {
-                Directory.CreateDirectory(results);
+                int id;
+                return int.TryParse(k, out id);
+            };
+
+            using (StreamReader sr = new StreamReader(file))
+            {
+                while ((ln = sr.ReadLine()) != null)
+                {
+                    string[] tLn = ln.Split(',');
+
+                    if (tLn.Length > 0)
+                        if (tLn[0].Length > 0 && !tcs.contains(tLn[0]) && tLn[1].Length > 0 && isInt(tLn[2]))
+                            tcs.add(tLn[0], tLn[1]);
+                }
             }
-            return results;
+
+            return tcs;
         }
     }
 }

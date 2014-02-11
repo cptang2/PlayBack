@@ -9,38 +9,51 @@ using System.Threading;
 
 namespace PlayBack
 {
-    struct eventStore
+    //Each step consists of an image and the corresponding events
+    struct step
     {
         public string image;
         public List<string> events;
 
-        public eventStore(string tempImage)
+
+        public step(string image)
         {
-            image = tempImage;
+            this.image = image;
             events = new List<string>();
+        }
+
+
+        public void setImage(string image)
+        {
+            this.image = image;
         }
     }
 
 
     class Replay
     {
-        config configList;
-        string file;
-        StreamWriter resultsFile;
-        List<eventStore> eventList = new List<eventStore>();
+        private Config cfg;
+        private string pFile;
+        private StreamWriter resultsFile;
+        private List<step> sList = new List<step>();
         private Rectangle bounds = Screen.GetBounds(Point.Empty);
 
-        public Replay(string tempFile, StreamWriter tempResultsFile) 
-        {
-            file = tempFile;
-            configList = ReadConfig.read(Path.Combine(Path.GetDirectoryName(file),
-                                                      Path.GetFileNameWithoutExtension(file) + @"\config.xml"));
 
-            resultsFile = tempResultsFile;
+        public Replay(string file, StreamWriter resultsFile) 
+        {
+            this.pFile = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file));
+            this.resultsFile = resultsFile;
+
+            string dir = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file));
+            this.cfg = new Config(Path.Combine(dir, @"config.xml"));
+
+            readTCs(file);
+            printEvents();
         }
 
+
         // Put csv instructions file into data object
-        public void readInstructs()
+        public void readTCs(string file)
         {
             //Read events from file and stores them in a list of eventStore objects:
             using (StreamReader instructs = new StreamReader(file))
@@ -49,52 +62,52 @@ namespace PlayBack
                 while ((line = instructs.ReadLine()) != null)
                 {
                     if (line.Split(',')[0] == "image")
-                        eventList.Add(new eventStore(line.Split(',')[1]));
-                    else if (eventList.Count > 0)
-                        eventList[eventList.Count - 1].events.Add(line);
+                        sList.Add(new step(line.Split(',')[1]));
+                    else if (sList.Count > 0)
+                        sList[sList.Count - 1].events.Add(line);
                 }
             }
 
-            removeIgnored();
+            delIgnored();
             cleanDoubleClick();
         }
 
 
-        //Remove ignored items:
-        private void removeIgnored()
+        //Remove ignored steps:
+        private void delIgnored()
         {
-            for (int i = configList.steps.Count - 1; i >= 0; i--)
-            {
-                eventList.RemoveAt(configList.steps[i]);
-            }
+            for (int i = cfg.steps.Count - 1; i >= 0; i--)
+                sList.RemoveAt(cfg.steps[i]);
         }
 
 
         //Double click is also recorded as two click down and click up events:
         private void cleanDoubleClick()
         {
-            eventStore temp;
+            List<string> sE;
 
-            //Find doubleclick instances and delete the event before them:
-            for (int i = 0; i < eventList.Count; i++)
+            Func<List<step>, int, int> remStep = (s, i) =>
             {
-                for (int j = 0; j < eventList[i].events.Count; j++)
+                s[i].setImage(s[i - 1].image);
+                s.RemoveAt(i - 1);
+
+                return (i-1);
+            };
+
+
+            //Find doubleclick instances and delete the step before them:
+            for (int i = 0; i < sList.Count; i++)
+            {
+                sE = sList[i].events;
+                for (int j = 0; j < sE.Count; j++)
                 {
-                    if (eventList[i].events[j].Split(',')[0].Contains("doubleclick"))
+                    if (sE[j].Split(',')[0].Contains("doubleclick"))
                     {
-                        eventList[i].events.RemoveAt(j + 1);
-                        eventList[i].events.RemoveAt(j - 1);
+                        sE.RemoveAt(j + 1);
+                        sE.RemoveAt(j - 1);
 
                         if (i > 0)
-                        {
-                            temp = new eventStore();
-                            temp = eventList[i];
-                            temp.image = eventList[i - 1].image;
-                            eventList[i] = temp;
-
-                            eventList.RemoveAt(i - 1);
-                            i--;
-                        }
+                            i = remStep(sList, i);
 
                         break;
                     }
@@ -102,19 +115,20 @@ namespace PlayBack
             }
         }
 
+
         //Replay events in csv file:
-        public bool playEvents(int numOfThreads, float tolerance)
+        public bool playEvents(int numOfThreads)
         {
             Bitmap image;
 
-            foreach (eventStore e in eventList)
+            foreach (step e in sList)
             {
-                image = new Bitmap(Path.Combine(Path.GetDirectoryName(file), Path.Combine(Path.GetFileNameWithoutExtension(file), e.image)));
+                image = new Bitmap(Path.Combine(pFile, e.image));
                 resultsFile.WriteLine("Step: {0}", e.image);
 
                 foreach (string s in e.events)
                 {
-                    if (!handleEvent(image, s, numOfThreads, tolerance, e.image))
+                    if (!handleEvent(image, s, numOfThreads, cfg.tol, e.image))
                         return false;
                 }
 
@@ -123,6 +137,7 @@ namespace PlayBack
 
             return true;
         }
+
 
         //Handles method invokes for mouse and keyboard input
         private bool handleEvent(Bitmap image, string ev, int numOfThreads, float tolerance, string imageName)
@@ -137,7 +152,7 @@ namespace PlayBack
                 MouseInput.move(int.Parse(coms[1]), int.Parse(coms[2]));
 
                 //Check if the image matches the screen:
-                if (!compareToScreen(image, numOfThreads, tolerance, configList, imageName))
+                if (!compareToScreen(image, numOfThreads, tolerance, cfg, imageName))
                     return false;
             }
 
@@ -165,12 +180,12 @@ namespace PlayBack
 
 
         //Compare the image to the screen for an allotted time:
-        private bool compareToScreen(Bitmap image, int numOfThreads, float tolerance, config configPath, string imageName)
+        private bool compareToScreen(Bitmap image, int numOfThreads, float tolerance, Config configPath, string imageName)
         {
             using (Bitmap screen = new Bitmap(bounds.Width, bounds.Height))
             {
                 int index = 0;
-                while (index < (int)(configList.timeout / 1000))
+                while (index < (int)(cfg.timeout / 1000))
                 {
                     using (Graphics g = Graphics.FromImage(screen))
                     {
@@ -186,14 +201,12 @@ namespace PlayBack
 
                 resultsFile.WriteLine();
 
-                if (configList.record)
-                    screen.Save(Path.Combine(Path.GetDirectoryName(file),
-                                                                    (Path.GetFileNameWithoutExtension(file) + "_Results\\" + imageName)));
+                if (cfg.record)
+                    screen.Save(Path.Combine(pFile, ("_Results\\" + imageName)));
 
-                if (index == (int)(configList.timeout / 1000))
+                if (index == (int)(cfg.timeout / 1000))
                 {
-                    screen.Save(Path.Combine(Path.GetDirectoryName(file),
-                                                                    (Path.GetFileNameWithoutExtension(file) + "_Results\\" + imageName)));
+                    screen.Save(Path.Combine(pFile, ("_Results\\" + imageName)));
 
                     //Up key everything:
                     for (int i = 1; i < 150; i++)
@@ -210,7 +223,7 @@ namespace PlayBack
         //Print what is stored in the eventList data structure
         public void printEvents()
         {
-            foreach (eventStore e in eventList)
+            foreach (step e in sList)
             {
                 Console.WriteLine("Image: {0}", e.image);
                 resultsFile.WriteLine("Image: {0}", e.image);

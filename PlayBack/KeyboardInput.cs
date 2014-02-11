@@ -9,8 +9,10 @@ namespace PlayBack
 {
     class KeyboardInput
     {
+        #region Unmanaged code import
         [DllImport("user32.dll")]
         static extern uint keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+        #endregion
 
         public static void KeyDown(int key)
         {

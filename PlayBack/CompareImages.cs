@@ -46,10 +46,10 @@ namespace PlayBack
     class CompareImages
     {
         static List<int[]> subRegions = new List<int[]>();
-        static config configList;
+        static Config configList;
 
         //Compares the two images given. Splits the computation among the specified number of threads:
-        public static bool driver(Bitmap tempImage1, Bitmap tempImage2, int numOfThreads, float tolerance, config tempConfigList, StreamWriter resultsFile)
+        public static bool driver(Bitmap tempImage1, Bitmap tempImage2, int numOfThreads, float tolerance, Config tempConfigList, StreamWriter resultsFile)
         {
             configList = tempConfigList;
 
@@ -113,8 +113,6 @@ namespace PlayBack
 
             for (int i = 0; i < numOfThreads; i++)
             {
-                //tempBounds.Y = bounds.Y + (int)((i / ((float)numOfThreads)) * bounds.Height);
-
                 diff[i] = new Differ(image1Split[i], image2Split[i], subRegions[i]);
                 compThreads[i] = new Thread(new ThreadStart(diff[i].compare));
                 compThreads[i].Start();

@@ -6,38 +6,42 @@ using System.IO;
 
 namespace PlayBack
 {
-    struct config
+    /*
+    //Data structure used to store config file info:
+    struct Config
     {
-        public int startTime;
+        public int start;
         public int timeout;
         public bool record;
-        public float tolerance;
+        public float tol;
         public List<int> steps;
         public List<int[]> regions;
 
-        public config (int tempStartTime, int tempTimeout, float tempTolerance)
+        public Config (int start, int timeout, float tol)
         {
-            startTime = tempStartTime;
-            timeout = tempTimeout;
-            tolerance = tempTolerance;
+            this.start = start;
+            this.timeout = timeout;
+            this.tol = tol;
             record = false;
             steps = new List<int>();
             regions = new List<int[]>();
         }
     }
 
+
     class ReadConfig
     {
-        static config ignList;
+        static Config ignList;
         static bool compiled = false;
 
         ReadConfig() { }
 
-        public static config read(string file)
+        //Didn't feel like using xPath
+        public static Config read(string file)
         {
             if (compiled == false)
             {
-                ignList = new config(0,0,0);
+                ignList = new Config(0,0,0);
 
                 using (StreamReader r = new StreamReader(file))
                 {
@@ -59,7 +63,7 @@ namespace PlayBack
                         }
                         else if (line.Contains("StartTime"))
                         {
-                            ignList.startTime = int.Parse(line.Split('>')[1].Split('<')[0]);
+                            ignList.start = int.Parse(line.Split('>')[1].Split('<')[0]);
                         }
                         else if (line.Contains("ImageTimeout"))
                         {
@@ -67,7 +71,7 @@ namespace PlayBack
                         }
                         else if (line.Contains("Tolerance"))
                         {
-                            ignList.tolerance = float.Parse(line.Split('>')[1].Split('<')[0]);
+                            ignList.tol = float.Parse(line.Split('>')[1].Split('<')[0]);
                         }
                         else if (line.Contains("Record"))
                         {
@@ -83,5 +87,5 @@ namespace PlayBack
 
             return ignList;
         }
-    }
+    }*/
 }
