@@ -10,6 +10,8 @@ namespace PlayBack
 {
     class Program
     {
+        public static mData data;
+
         // Used to store testcase and database pairs
         class dbf
         {
@@ -48,14 +50,17 @@ namespace PlayBack
                 files = getInput();
 
             foreach (string f in files)
-                Startup.run(threads, f);
+            {
+                data = new mData(f);
+                Startup.run(threads);
+            }
 
             Console.ReadKey();
         }
 
 
         //Get user input for file to replay
-        public static List<string> getInput()
+        private static List<string> getInput()
         {
             string file = null;
             List<string> files = new List<string>();

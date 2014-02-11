@@ -32,31 +32,22 @@ namespace PlayBack
 
     class Replay
     {
-        private Config cfg;
-        private string pFile;
-        private StreamWriter resultsFile;
         private List<step> sList = new List<step>();
         private Rectangle bounds = Screen.GetBounds(Point.Empty);
 
 
-        public Replay(string file, StreamWriter resultsFile) 
+        public Replay() 
         {
-            this.pFile = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file));
-            this.resultsFile = resultsFile;
-
-            string dir = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file));
-            this.cfg = new Config(Path.Combine(dir, @"config.xml"));
-
-            readTCs(file);
+            readTCs();
             printEvents();
         }
 
 
         // Put csv instructions file into data object
-        public void readTCs(string file)
+        public void readTCs()
         {
             //Read events from file and stores them in a list of eventStore objects:
-            using (StreamReader instructs = new StreamReader(file))
+            using (StreamReader instructs = new StreamReader(Program.data.file))
             {
                 string line;
                 while ((line = instructs.ReadLine()) != null)
@@ -76,8 +67,8 @@ namespace PlayBack
         //Remove ignored steps:
         private void delIgnored()
         {
-            for (int i = cfg.steps.Count - 1; i >= 0; i--)
-                sList.RemoveAt(cfg.steps[i]);
+            for (int i = Program.data.cfg.steps.Count - 1; i >= 0; i--)
+                sList.RemoveAt(Program.data.cfg.steps[i]);
         }
 
 
@@ -93,7 +84,6 @@ namespace PlayBack
 
                 return (i-1);
             };
-
 
             //Find doubleclick instances and delete the step before them:
             for (int i = 0; i < sList.Count; i++)
@@ -117,18 +107,18 @@ namespace PlayBack
 
 
         //Replay events in csv file:
-        public bool playEvents(int numOfThreads)
+        public bool playSteps(int numOfThreads)
         {
             Bitmap image;
 
             foreach (step e in sList)
             {
-                image = new Bitmap(Path.Combine(pFile, e.image));
-                resultsFile.WriteLine("Step: {0}", e.image);
+                image = new Bitmap(Path.Combine(Program.data.dir, e.image));
+                Program.data.rF.WriteLine("Step: {0}", e.image);
 
                 foreach (string s in e.events)
                 {
-                    if (!handleEvent(image, s, numOfThreads, cfg.tol, e.image))
+                    if (!handleStep(image, s, numOfThreads, Program.data.cfg.tol, e.image))
                         return false;
                 }
 
@@ -140,7 +130,7 @@ namespace PlayBack
 
 
         //Handles method invokes for mouse and keyboard input
-        private bool handleEvent(Bitmap image, string ev, int numOfThreads, float tolerance, string imageName)
+        private bool handleStep(Bitmap image, string ev, int numOfThreads, float tolerance, string imageName)
         {
             string[] coms = ev.Split(',');
 
@@ -152,7 +142,7 @@ namespace PlayBack
                 MouseInput.move(int.Parse(coms[1]), int.Parse(coms[2]));
 
                 //Check if the image matches the screen:
-                if (!compareToScreen(image, numOfThreads, tolerance, cfg, imageName))
+                if (!compareToScreen(image, numOfThreads, tolerance, Program.data.cfg, imageName))
                     return false;
             }
 
@@ -185,28 +175,28 @@ namespace PlayBack
             using (Bitmap screen = new Bitmap(bounds.Width, bounds.Height))
             {
                 int index = 0;
-                while (index < (int)(cfg.timeout / 1000))
+                while (index < (int)(Program.data.cfg.timeout / 1000))
                 {
                     using (Graphics g = Graphics.FromImage(screen))
                     {
                         g.CopyFromScreen(Point.Empty, Point.Empty, bounds.Size);
                     }
 
-                    if (CompareImages.driver(image, screen, numOfThreads, tolerance, configPath, resultsFile))
+                    if (CompareImages.driver(image, screen, numOfThreads, tolerance, configPath, Program.data.rF))
                         break;
 
                     Thread.Sleep(1000);
                     index++;
                 }
 
-                resultsFile.WriteLine();
+                Program.data.rF.WriteLine();
 
-                if (cfg.record)
-                    screen.Save(Path.Combine(pFile, ("_Results\\" + imageName)));
+                if (Program.data.cfg.record)
+                    screen.Save(Path.Combine(Program.data.dir, ("_Results\\" + imageName)));
 
-                if (index == (int)(cfg.timeout / 1000))
+                if (index == (int)(Program.data.cfg.timeout / 1000))
                 {
-                    screen.Save(Path.Combine(pFile, ("_Results\\" + imageName)));
+                    screen.Save(Path.Combine(Program.data.dir, ("_Results\\" + imageName)));
 
                     //Up key everything:
                     for (int i = 1; i < 150; i++)
@@ -226,13 +216,15 @@ namespace PlayBack
             foreach (step e in sList)
             {
                 Console.WriteLine("Image: {0}", e.image);
-                resultsFile.WriteLine("Image: {0}", e.image);
+                Program.data.rF.WriteLine("Image: {0}", e.image);
+
                 foreach (string s in e.events)
                 {
                     Console.WriteLine("event: {0}", s);
-                    resultsFile.WriteLine("Image: {0}", s);
+                    Program.data.rF.WriteLine("Image: {0}", s);
                 }
-                resultsFile.WriteLine();
+
+                Program.data.rF.WriteLine();
                 Console.Write('\n');
             }
         }

@@ -10,34 +10,21 @@ namespace PlayBack
     class Startup
     {
         // Read instructions from csv file and replay them:
-        public static void run(int threads, string file)
+        public static void run(int threads)
         {
-            string dir = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file));
-
             //Wait for the time specified in the config file
-            Thread.Sleep((new Config(Path.Combine(dir, @"config.xml"))).start);
+            Thread.Sleep((new Config(Path.Combine(Program.data.dir, @"config.xml"))).start);
 
             //Run playback and record the results in a results file:
-            using (StreamWriter rF = new StreamWriter(rFCreate(dir + "_Results")))
-            {
-                Replay rObj = new Replay(file, rF);
+            Replay rObj = new Replay();
 
-                if (rObj.playEvents(threads))
-                    rF.WriteLine("Successful run");
-                else
-                    rF.WriteLine("Failed run");
-            }
+            if (rObj.playSteps(threads))
+                Program.data.rF.WriteLine("Successful run");
+            else
+                Program.data.rF.WriteLine("Failed run");
 
             Console.WriteLine("Finished");
         }
 
-
-        static string rFCreate(string rDir)
-        {
-            if (!Directory.Exists(rDir))
-                Directory.CreateDirectory(rDir);
-
-            return Path.Combine(rDir, "results.txt");
-        }
     }
 }

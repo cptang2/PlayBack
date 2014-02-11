@@ -51,7 +51,6 @@
     <Compile Include="MouseInput.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReadConfig.cs" />
     <Compile Include="Replay.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
