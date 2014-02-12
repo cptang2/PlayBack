@@ -66,7 +66,7 @@ namespace PlayBack
         {
             string[] coms = ev.Split(',');
 
-            //Move to click location:
+            //Handle non-click events:
             switch (coms[0])
             {
                 case ("detent"):
@@ -86,6 +86,7 @@ namespace PlayBack
         }
 
 
+        //Handle click event
         private bool checkClick(string[] coms, string image)
         {
             string[] dwn = { "Left", "Right", "Middle", 
@@ -112,12 +113,13 @@ namespace PlayBack
                     int index = 0;
                     while (index < (int)(Program.data.cfg.timeout / 1000))
                     {
+                        //Get current screen bitmap:
                         using (Graphics g = Graphics.FromImage(screen))
                         {
                             g.CopyFromScreen(Point.Empty, Point.Empty, bounds.Size);
                         }
 
-                        if (CompareImages.driver(png, screen, Program.data.rF))
+                        if (CompareImages.driver(png, screen))
                             break;
 
                         Thread.Sleep(1000);

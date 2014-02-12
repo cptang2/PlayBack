@@ -48,20 +48,23 @@ namespace PlayBack
         static List<int[]> subRegions = new List<int[]>();
         readonly static int threads = Program.data.getThreads();
 
+
         //Compares the two images given. Splits the computation among the specified number of threads:
-        public static bool driver(Bitmap tempImage1, Bitmap tempImage2, StreamWriter resultsFile)
+        public static bool driver(Bitmap bImage1, Bitmap bImage2)
         {
-            Rectangle bounds = RFtoR(tempImage1);
-            Byte[] image1 = ConvertBitmap.getBytes(tempImage1);
-            Byte[] image2 = ConvertBitmap.getBytes(tempImage2);
+            GraphicsUnit pixel = GraphicsUnit.Pixel;
+            Rectangle bounds = Rectangle.Round(bImage1.GetBounds(ref pixel));
+
+            Byte[] image1 = ConvertBitmap.getBytes(bImage1);
+            Byte[] image2 = ConvertBitmap.getBytes(bImage2);
             Thread[] compThreads = new Thread[threads];
-            Differ[] diff = new Differ[threads];
+            Differ[] diffs = new Differ[threads];
 
             if (subRegions.Count == 0)
                 getIgnBlocks();
 
             //Split computation into several threads
-            allocThreads(image1, image2, compThreads, diff);
+            allocThreads(image1, image2, compThreads, diffs);
 
             //Wait till computation is finished:
             waitForFinish(compThreads);
@@ -69,12 +72,12 @@ namespace PlayBack
             uint total = 0;
             for (int i = 0; i < threads; i++)
             {
-                total += diff[i].numODiffs;
+                total += diffs[i].numODiffs;
             }
 
             //Calculate % difference:
             Console.WriteLine("{0}% different", (total / ((float)bounds.Height * bounds.Width * 4)) * 100);
-            resultsFile.WriteLine("{0}% different", (total / ((float)bounds.Height * bounds.Width * 4)) * 100);
+            Program.data.rF.WriteLine("{0}% different", (total / ((float)bounds.Height * bounds.Width * 4)) * 100);
 
             if (((total / ((float)bounds.Height * bounds.Width * 4)) * 100) < Program.data.cfg.tol)
                 return true;
@@ -86,9 +89,8 @@ namespace PlayBack
         //Assign work to different threads:
         private static void allocThreads(Byte[] image1, Byte[] image2, Thread[] compThreads, Differ[] diff)
         {
-            //tempBounds.Height = (int)(bounds.Height / ((float)numOfThreads));
-            List<Byte[]> image1Split = new List<byte[]>();
-            List<Byte[]> image2Split = new List<byte[]>(); 
+            List<Byte[]> img1Split = new List<byte[]>();
+            List<Byte[]> img2Split = new List<byte[]>(); 
 
             //Divide image byte arrays by number of threads:
             byte[] temp;
@@ -101,23 +103,25 @@ namespace PlayBack
 
                 temp = new Byte[endpoint - offset];
                 Buffer.BlockCopy(image1, offset * sizeof(byte), temp, 0, (endpoint - offset) * sizeof(byte));
-                image1Split.Add(temp);
+                img1Split.Add(temp);
 
                 temp = new Byte[endpoint - offset];
                 Buffer.BlockCopy(image2, offset * sizeof(byte), temp, 0, (endpoint - offset) * sizeof(byte));
-                image2Split.Add(temp);
+                img2Split.Add(temp);
             }
 
-
+            //Start the computation on new threads:
             for (int i = 0; i < threads; i++)
             {
-                diff[i] = new Differ(image1Split[i], image2Split[i], subRegions[i]);
+                diff[i] = new Differ(img1Split[i], img2Split[i], subRegions[i]);
                 compThreads[i] = new Thread(new ThreadStart(diff[i].compare));
                 compThreads[i].Start();
 
+                //Wait until thread is initialize:
                 while (!compThreads[i].IsAlive) ;
             }
         }
+
 
         //Wait for the threads to finish:
         private static void waitForFinish(Thread[] compThreads)
@@ -139,6 +143,7 @@ namespace PlayBack
                     break;
             }
         }
+
 
         //Ignore regions specified in config file:
         private static void getIgnBlocks()
@@ -176,21 +181,5 @@ namespace PlayBack
                 subRegions.Add(tempArray);
             }
         }
-
-        static Rectangle RFtoR(Bitmap image1)
-        {
-            RectangleF fBounds;
-            GraphicsUnit pixel = GraphicsUnit.Pixel;
-            fBounds = image1.GetBounds(ref pixel);
-
-            Rectangle bounds = new Rectangle();
-            bounds.X = (int)fBounds.X;
-            bounds.Y = (int)fBounds.Y;
-            bounds.Width = (int)fBounds.Width;
-            bounds.Height = (int)fBounds.Height;
-
-            return bounds;
-        }
     }
-    
 }
