@@ -49,6 +49,7 @@
     <Compile Include="KeyboardInput.cs" />
     <Compile Include="mData.cs" />
     <Compile Include="MouseInput.cs" />
+    <Compile Include="ParseTCs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replay.cs" />

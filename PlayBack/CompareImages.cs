@@ -46,30 +46,28 @@ namespace PlayBack
     class CompareImages
     {
         static List<int[]> subRegions = new List<int[]>();
-        static Config configList;
+        readonly static int threads = Program.data.getThreads();
 
         //Compares the two images given. Splits the computation among the specified number of threads:
-        public static bool driver(Bitmap tempImage1, Bitmap tempImage2, int numOfThreads, float tolerance, Config tempConfigList, StreamWriter resultsFile)
+        public static bool driver(Bitmap tempImage1, Bitmap tempImage2, StreamWriter resultsFile)
         {
-            configList = tempConfigList;
-
             Rectangle bounds = RFtoR(tempImage1);
             Byte[] image1 = ConvertBitmap.getBytes(tempImage1);
             Byte[] image2 = ConvertBitmap.getBytes(tempImage2);
-            Thread[] compThreads = new Thread[numOfThreads];
-            Differ[] diff = new Differ[numOfThreads];
+            Thread[] compThreads = new Thread[threads];
+            Differ[] diff = new Differ[threads];
 
             if (subRegions.Count == 0)
-                getIgnBlocks(numOfThreads);
+                getIgnBlocks();
 
             //Split computation into several threads
-            allocThreads(numOfThreads, image1, image2, compThreads, diff);
+            allocThreads(image1, image2, compThreads, diff);
 
             //Wait till computation is finished:
-            waitForFinish(numOfThreads, compThreads);
+            waitForFinish(compThreads);
 
             uint total = 0;
-            for (int i = 0; i < numOfThreads; i++)
+            for (int i = 0; i < threads; i++)
             {
                 total += diff[i].numODiffs;
             }
@@ -78,7 +76,7 @@ namespace PlayBack
             Console.WriteLine("{0}% different", (total / ((float)bounds.Height * bounds.Width * 4)) * 100);
             resultsFile.WriteLine("{0}% different", (total / ((float)bounds.Height * bounds.Width * 4)) * 100);
 
-            if (((total / ((float)bounds.Height * bounds.Width * 4)) * 100) < tolerance)
+            if (((total / ((float)bounds.Height * bounds.Width * 4)) * 100) < Program.data.cfg.tol)
                 return true;
             else
                 return false;
@@ -86,7 +84,7 @@ namespace PlayBack
 
 
         //Assign work to different threads:
-        private static void allocThreads(int numOfThreads, Byte[] image1, Byte[] image2, Thread[] compThreads, Differ[] diff)
+        private static void allocThreads(Byte[] image1, Byte[] image2, Thread[] compThreads, Differ[] diff)
         {
             //tempBounds.Height = (int)(bounds.Height / ((float)numOfThreads));
             List<Byte[]> image1Split = new List<byte[]>();
@@ -96,10 +94,10 @@ namespace PlayBack
             byte[] temp;
             int offset = 0;
             int endpoint = 0;
-            for (int i = 0; i < numOfThreads; i++)
+            for (int i = 0; i < threads; i++)
             {
-                offset = (int)(image1.Length * (i / (float)numOfThreads));
-                endpoint = (int)(image1.Length * ((i + 1) / (float)numOfThreads));
+                offset = (int)(image1.Length * (i / (float)threads));
+                endpoint = (int)(image1.Length * ((i + 1) / (float)threads));
 
                 temp = new Byte[endpoint - offset];
                 Buffer.BlockCopy(image1, offset * sizeof(byte), temp, 0, (endpoint - offset) * sizeof(byte));
@@ -111,7 +109,7 @@ namespace PlayBack
             }
 
 
-            for (int i = 0; i < numOfThreads; i++)
+            for (int i = 0; i < threads; i++)
             {
                 diff[i] = new Differ(image1Split[i], image2Split[i], subRegions[i]);
                 compThreads[i] = new Thread(new ThreadStart(diff[i].compare));
@@ -122,14 +120,14 @@ namespace PlayBack
         }
 
         //Wait for the threads to finish:
-        private static void waitForFinish(int numOfThreads, Thread[] compThreads)
+        private static void waitForFinish(Thread[] compThreads)
         {
             bool someAlive = true;
             while (someAlive)
             {
                 someAlive = false;
 
-                for (int i = 0; i < numOfThreads; i++)
+                for (int i = 0; i < threads; i++)
                 {
                     if (compThreads[i].IsAlive)
                     {
@@ -143,7 +141,7 @@ namespace PlayBack
         }
 
         //Ignore regions specified in config file:
-        private static void getIgnBlocks(int numOfThreads)
+        private static void getIgnBlocks()
         {
             Rectangle bounds = Screen.GetBounds(Point.Empty);
 
@@ -153,7 +151,7 @@ namespace PlayBack
                 regions[i] = 1;
 
             //Mark rectangles in regions array:
-            foreach (int[] rect in configList.regions)
+            foreach (int[] rect in Program.data.cfg.regions)
             {
                 for (int i = rect[1]; i < rect[3]; i++)
                 {
@@ -168,10 +166,10 @@ namespace PlayBack
             int offset = 0;
             int endpoint = 0;
             int[] tempArray;
-            for (int i = 0; i < numOfThreads; i++)
+            for (int i = 0; i < threads; i++)
             {
-                offset = (int)(bounds.Height * bounds.Width * (i / ((float)numOfThreads)));
-                endpoint = (int)(bounds.Height * bounds.Width * ((i+1) / ((float)numOfThreads)));
+                offset = (int)(bounds.Height * bounds.Width * (i / ((float)threads)));
+                endpoint = (int)(bounds.Height * bounds.Width * ((i+1) / ((float)threads)));
 
                 tempArray = new int[endpoint - offset];
                 Buffer.BlockCopy(regions, offset * sizeof(int), tempArray, 0, (endpoint - offset) * sizeof(int));

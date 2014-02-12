@@ -11,6 +11,7 @@ namespace PlayBack
     //Code modified from http://www.codeproject.com/Tips/240428/Work-with-bitmap-faster-with-Csharp
     class ConvertBitmap
     {
+        //Convert bitmap to byte array
         public static byte[] getBytes(Bitmap source)
         {
             try

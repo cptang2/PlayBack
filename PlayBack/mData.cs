@@ -13,13 +13,15 @@ namespace PlayBack
         public Config cfg;
         public string dir, file;
         public StreamWriter rF;
+        int threads;
 
-        public mData(string file)
+        public mData(string file, int threads)
         {
             this.file = file;
             this.dir = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file));
             cfg = new Config(Path.Combine(dir, @"config.xml"));
             rF = new StreamWriter(rFCreate(Program.data.dir + "_Results"));
+            this.threads = threads;
         }
 
         public void dispose()
@@ -33,6 +35,11 @@ namespace PlayBack
                 Directory.CreateDirectory(rDir);
 
             return Path.Combine(rDir, "results.txt");
+        }
+
+        public int getThreads()
+        {
+            return threads;
         }
     }
 }

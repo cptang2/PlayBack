@@ -51,8 +51,8 @@ namespace PlayBack
 
             foreach (string f in files)
             {
-                data = new mData(f);
-                Startup.run(threads);
+                data = new mData(f, threads);
+                Startup.run();
             }
 
             Console.ReadKey();
