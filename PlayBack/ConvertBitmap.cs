@@ -29,11 +29,10 @@ namespace PlayBack
                 // get source bitmap pixel format size
                 int Depth = System.Drawing.Bitmap.GetPixelFormatSize(source.PixelFormat);
 
+
                 // Check if bpp (Bits Per Pixel) is 8, 24, or 32
                 if (Depth != 8 && Depth != 24 && Depth != 32)
-                {
                     throw new ArgumentException("Only 8, 24 and 32 bpp images are supported.");
-                }
 
                 // Lock bitmap and return bitmap data
                 BitmapData bitmapData = source.LockBits(rect, ImageLockMode.ReadWrite,

@@ -64,6 +64,7 @@ namespace PlayBack
 
         MouseInput() { }
 
+
         public static void mouse(string key, int x, int y)
         {
             mouse_event(inputMap[key], map(x, bounds.Width), map(y, bounds.Height), 0, 0);

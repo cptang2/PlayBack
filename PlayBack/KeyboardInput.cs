@@ -14,10 +14,12 @@ namespace PlayBack
         static extern uint keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
         #endregion
 
+
         public static void KeyDown(int key)
         {
             keybd_event((byte)key, 0, 0, 0);
         }
+
 
         public static void KeyUp(int key)
         {

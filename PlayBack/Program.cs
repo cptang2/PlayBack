@@ -46,7 +46,7 @@ namespace PlayBack
             const string fPath = @"C:\GDrop\Aut.txt";
             List<string> files = new List<string>();
 
-            if (!File.Exists(fPath))
+            //if (!File.Exists(fPath))
                 files = getInput();
 
             foreach (string f in files)

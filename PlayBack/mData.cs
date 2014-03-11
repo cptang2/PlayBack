@@ -15,6 +15,7 @@ namespace PlayBack
         public StreamWriter rF;
         int threads;
 
+
         public mData(string file, int threads)
         {
             this.file = file;
@@ -24,10 +25,12 @@ namespace PlayBack
             this.threads = threads;
         }
 
+
         public void dispose()
         {
             rF.Dispose();
         }
+
 
         static string rFCreate(string rDir)
         {
@@ -36,6 +39,7 @@ namespace PlayBack
 
             return Path.Combine(rDir, "results.txt");
         }
+
 
         public int getThreads()
         {

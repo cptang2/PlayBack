@@ -25,6 +25,7 @@ namespace PlayBack
             ignRegions = subregion;
         }
 
+
         //Bitwise compare:
         public void compare()
         {
